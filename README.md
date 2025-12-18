@@ -28,11 +28,7 @@ ofxSherpaOnnx has been validated on:
 ### Build Tool Dependency
 
 * **CMake**  
-  CMake is required to configure and build the native dependencies used by ofxRAG, specifically SentencePiece and FAISS.  
-  ONNX Runtime is integrated as a prebuilt binary and does not require compilation.
-
-CMake is cross-platform and must be installed before
-    attempting to build these libraries
+  CMake is required to configure and build sherpa-onnx as a static library, which is then used by ofxSherpaOnnx. CMake is a cross-platform build system and must be installed before attempting to build these libraries.
 
 **Ubuntu / Debian (Linux):**
 
