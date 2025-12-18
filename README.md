@@ -46,7 +46,7 @@ brew install cmake
 ## Setup
 
 
-### 1. Build onnx-sherpa library with cmake
+### 1. Build onnx-sherpa library with CMake
 
 Navigate to the `scripts` folder and execute the setup script to build onnx-sherpa as a static library:
 ```bash
