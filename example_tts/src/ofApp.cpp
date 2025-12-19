@@ -108,7 +108,11 @@ void ofApp::onGenerateSpeechButtonPressed(){
         }
 
         // Save the buffer to a temporary WAV file and then load it with ofSoundPlayer
+#ifdef TARGET_OSX
+        std::string tempWavPath = "temp_tts.wav";
+#else
         std::string tempWavPath = ofToDataPath("temp_tts.wav", true);
+#endif
         if (!ofxSaveSound(buffer, tempWavPath)) {
             ofLogError("ofApp") << "Failed to save TTS audio to: " << tempWavPath;
             return;
