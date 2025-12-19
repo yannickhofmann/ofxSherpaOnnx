@@ -45,11 +45,11 @@ brew install cmake
 
 ### Example Dependencies
 
-* **ofxSoundObjects** is used in the **example_tts** to handle audio playback.
+* **ofxSoundObjects** (developed by [roymacdonald](https://github.com/roymacdonald)) is used in the **example_tts** to handle audio playback.
     [https://github.com/roymacdonald/ofxSoundObjects](https://github.com/roymacdonald/ofxSoundObjects)
-* **ofxAudioFile** is a dependency of ofxSoundObjects and is used for audio file operations.
+* **ofxAudioFile** (developed by [roymacdonald](https://github.com/roymacdonald)) is a dependency of ofxSoundObjects and is used for audio file operations.
     [https://github.com/roymacdonald/ofxAudioFile](https://github.com/roymacdonald/ofxAudioFile)
-* **ofxGui** is used in both examples for the GUI. It is part of the openFrameworks core addons.
+* **ofxGui** is used in example_tts for the GUI. It is part of the openFrameworks core addons.
 
 
 ## Setup
