@@ -1,0 +1,78 @@
+# ===============================
+# openFrameworks build artifacts
+# ===============================
+bin/
+obj/
+
+# ===============================
+# IDE / Editor files
+# ===============================
+.vscode/
+.idea/
+*.suo
+*.user
+*.userprefs
+*.mode1v3
+*.mode2v3
+*.pbxuser
+*.xcuserdata/
+*.xcworkspace/
+*.xcodeproj/project.xcworkspace/
+
+# ===============================
+# macOS
+# ===============================
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ===============================
+# Linux
+# ===============================
+*~
+*.swp
+*.log
+
+# ===============================
+# C / C++ build files
+# ===============================
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# ===============================
+# Python / Scripts (falls vorhanden)
+# ===============================
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# ===============================
+# Downloaded / generated models
+# ===============================
+models/
+checkpoints/
+*.onnx
+*.pt
+
+# ===============================
+# Temporary / cache
+# ===============================
+tmp/
+cache/
+
+# ===============================
+# Audio / TTS output (generated)
+# ===============================
+*.wav
+*.mp3
+
+# ===============================
+# Logs
+# ===============================
+logs/
+*.log
