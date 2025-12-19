@@ -44,7 +44,7 @@ public:
 		ofSoundStream soundStream;
 		ofSoundBuffer resampledBuffer;
 
-		int modelSampleRate;
+		unsigned int modelSampleRate;
 		std::string currentRecognition;
 		std::string finalRecognition;
 };

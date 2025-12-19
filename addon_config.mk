@@ -5,7 +5,7 @@ meta:
 	ADDON_NAME = ofxSherpaOnnx
 	ADDON_DESCRIPTION = openFrameworks addon for real-time speech-to-text using sherpa-onnx
 	ADDON_AUTHOR = Yannick Hofmann
-	ADDON_TAGS = "ai", "speech-to-text", "nlp", "sherpa-onnx", "openframeworks", "ofxaddon"
+	ADDON_TAGS = "ai", "speech-to-text", "text-to-speech", "nlp", "sherpa-onnx", "openframeworks", "ofxaddon"
 	ADDON_URL = https://github.com/yannickhofmann/ofxSherpaOnnx
 
 common:

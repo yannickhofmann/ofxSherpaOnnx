@@ -19,32 +19,28 @@ public:
     ofxSherpaOnnx();
     ~ofxSherpaOnnx();
 
-    // Setup and configuration
-    // modelType can be "transducer", "zipformer", "wenet", etc.
-    // Ensure you provide the correct paths for the model architecture you are using.
-    // For transducer: encoder, decoder, joiner, tokens
-    // For others: model, tokens
-    bool setup(const std::string& encoderPath, const std::string& decoderPath, const std::string& joinerPath, const std::string& tokensPath, int sampleRate, const std::string& modelType);
-
-    // Processing audio
-    void process(const std::vector<float>& audioBuffer);
-    void process(const ofSoundBuffer& soundBuffer);
-
-    // Get results (optional, events are preferred for continuous updates)
+    // ASR (Speech-to-Text)
+    bool setupASR(const std::string& encoderPath, const std::string& decoderPath, const std::string& joinerPath, const std::string& tokensPath, int sampleRate, const std::string& modelType);
+    void processASR(const std::vector<float>& audioBuffer);
+    void processASR(const ofSoundBuffer& soundBuffer);
     std::string getCurrentText();
     std::string getFinalText();
-    
-    // Events
     ofEvent<std::string> onPartialResult;
     ofEvent<std::string> onFinalResult;
 
+    // TTS (Text-to-Speech)
+    bool setupTTS(const std::string& modelPath, const std::string& lexiconPath, const std::string& tokensPath, float noiseScale, float noiseW, float lengthScale);
+    bool generateTTS(const std::string& text, std::vector<float>& audioSamples, int& sampleRate);
+
 private:
-    const SherpaOnnxOnlineRecognizer* recognizer;
-    const SherpaOnnxOnlineStream* stream;
-    
+    // ASR members
+    const SherpaOnnxOnlineRecognizer* recognizer = nullptr;
+    const SherpaOnnxOnlineStream* stream = nullptr;
     std::string currentText;
     std::string finalText;
-
     void updateRecognitionResults();
     std::string lastResultText; // To track changes and fire events
+
+    // TTS members
+    const SherpaOnnxOfflineTts* ttsSynthesizer = nullptr;
 };

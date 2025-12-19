@@ -15,13 +15,13 @@
 void ofApp::setup(){
     ofSetFrameRate(60);
     ofBackground(30, 30, 30);
-    ofSetWindowTitle("ofxSherpaOnnx Example");
+    ofSetWindowTitle("ofxSherpaOnnx ASR Example");
 
     // Initialize ofxSherpaOnnx
     // IMPORTANT: You will need to download your own models and tokens.
-    // Run the script located at `ofxSherpaOnnx/scripts/download_model.sh`
+    // Run the script located at `ofxSherpaOnnx/scripts/download_ASR_model.sh`
     // It will download the necessary model for this example into:
-    // `ofxSherpaOnnx/example_basics/bin/data/models/online-zipformer-bilingual-zh-en-2023-02-20/`
+    // `ofxSherpaOnnx/example_asr/bin/data/models/online-zipformer-bilingual-zh-en-2023-02-20/`
     
     // --- Example for an online transducer model (e.g., zipformer) ---
     std::string encoderPath = "models/online-zipformer-bilingual-zh-en-2023-02-20/encoder-epoch-99-avg-1.int8.onnx";
@@ -30,7 +30,7 @@ void ofApp::setup(){
     std::string tokensPath  = "models/online-zipformer-bilingual-zh-en-2023-02-20/tokens.txt";
     std::string modelType   = "transducer"; // Must match the type of model you downloaded
 
-    this->modelSampleRate = 16000; // Models are typically trained at 16kHz
+    modelSampleRate = 16000; // Models are typically trained at 16kHz
     
     // Ensure paths are relative to your data folder
     encoderPath = ofToDataPath(encoderPath, true);
@@ -38,7 +38,7 @@ void ofApp::setup(){
     joinerPath = ofToDataPath(joinerPath, true);
     tokensPath = ofToDataPath(tokensPath, true);
 
-    if (sherpaOnnx.setup(encoderPath, decoderPath, joinerPath, tokensPath, modelSampleRate, modelType)) {
+    if (sherpaOnnx.setupASR(encoderPath, decoderPath, joinerPath, tokensPath, modelSampleRate, modelType)) {
         ofLogNotice("ofApp") << "ofxSherpaOnnx setup successful!";
     } else {
         ofLogError("ofApp") << "ofxSherpaOnnx setup failed! Check your model paths and files.";
@@ -56,12 +56,20 @@ void ofApp::setup(){
     ofLogNotice("ofApp") << "Available Audio Devices:";
     soundStream.printDeviceList();
     
-    // Optional: if you want to set a specific input device (uncomment and change ID)
-    // soundStream.setDeviceID(131); // e.g., Set to your ZOOM H4
+    // Optional: if you want to set a specific input device (uncomment and change index)
+    // auto devices = soundStream.getDeviceList();
+    // settings.setInDevice(devices.at(0));
 
     // Setup the sound stream with the correct sample rate and buffer size
     // We request a standard sample rate from the device, and will resample it down for the model.
-    soundStream.setup(this, nOutputChannels, nInputChannels, deviceSampleRate, bufferSize, 4);
+    ofSoundStreamSettings settings;
+    settings.setInListener(this);
+    settings.sampleRate = deviceSampleRate;
+    settings.numInputChannels = nInputChannels;
+    settings.numOutputChannels = nOutputChannels;
+    settings.bufferSize = bufferSize;
+    settings.numBuffers = 4;
+    soundStream.setup(settings);
 
     // Register event listeners
     ofAddListener(sherpaOnnx.onPartialResult, this, &ofApp::onPartialResultReceived);
@@ -114,11 +122,11 @@ void ofApp::audioIn(ofSoundBuffer &input){
         }
         
         // Pass the resampled audio buffer to ofxSherpaOnnx for processing.
-        sherpaOnnx.process(resampledBuffer);
+        sherpaOnnx.processASR(resampledBuffer);
 
     } else {
         // If sample rates match, process the buffer directly.
-        sherpaOnnx.process(input);
+        sherpaOnnx.processASR(input);
     }
 }
 

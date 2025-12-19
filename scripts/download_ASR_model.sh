@@ -10,7 +10,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # The data directory for the example is relative to the script's location
-DATA_DIR="${SCRIPT_DIR}/../example_basics/bin/data"
+DATA_DIR="${SCRIPT_DIR}/../example_asr/bin/data"
 
 MODELS_DIR="${DATA_DIR}/models"
 
