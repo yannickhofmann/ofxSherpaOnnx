@@ -1,78 +1,45 @@
-# ===============================
-# openFrameworks build artifacts
-# ===============================
-bin/
-obj/
+# Operating systems
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
 
-# ===============================
-# IDE / Editor files
-# ===============================
+# Editors and IDEs
 .vscode/
 .idea/
+.vs/
 *.suo
 *.user
-*.userprefs
-*.mode1v3
-*.mode2v3
-*.pbxuser
 *.xcuserdata/
 *.xcworkspace/
-*.xcodeproj/project.xcworkspace/
+*.xcodeproj/
+*.sln
+*.vcxproj
+*.vcxproj.filters
 
-# ===============================
-# macOS
-# ===============================
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# ===============================
-# Linux
-# ===============================
+# Temporary files
 *~
 *.swp
 *.log
 
-# ===============================
-# C / C++ build files
-# ===============================
-*.o
-*.a
-*.so
-*.dylib
-*.dll
-*.exe
-
-# ===============================
-# Python / Scripts (falls vorhanden)
-# ===============================
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
 .venv/
 .env
 
-# ===============================
-# Downloaded / generated models
-# ===============================
-models/
-checkpoints/
-*.onnx
-*.pt
+# openFrameworks build output
+**/obj/
+**/bin/*
+!**/bin/data/
+!**/bin/data/**
 
-# ===============================
-# Temporary / cache
-# ===============================
-tmp/
-cache/
+# Downloaded models and generated audio
+**/bin/data/models/
+**/bin/data/*.wav
 
-# ===============================
-# Audio / TTS output (generated)
-# ===============================
-*.wav
-*.mp3
+# Installer-generated libraries
+/libs/
 
-# ===============================
-# Logs
-# ===============================
-logs/
-*.log
+# Temporary sherpa-onnx source/build tree
+/sherpa-onnx-src/

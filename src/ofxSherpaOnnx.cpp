@@ -1,20 +1,21 @@
 /*
  * ofxSherpaOnnx
  *
- * Copyright (c) 2025 Yannick Hofmann
+ * Copyright (c) 2026 Yannick Hofmann
  * <contact@yannickhofmann.de>
  *
- * BSD Simplified License. 
+ * BSD Simplified License.
  * For information on usage and redistribution, and for a DISCLAIMER OF ALL
  * WARRANTIES, see the file, "LICENSE.txt," in this distribution.
  */
 
 #include "ofxSherpaOnnx.h"
-#include <cstring> // For memset
+#include <cstring> // std::memset
 
 ofxSherpaOnnx::ofxSherpaOnnx() {}
 
 ofxSherpaOnnx::~ofxSherpaOnnx() {
+    // Release every object created by the Sherpa-ONNX C API.
     if (stream) {
         SherpaOnnxDestroyOnlineStream(stream);
     }
@@ -26,27 +27,44 @@ ofxSherpaOnnx::~ofxSherpaOnnx() {
     }
 }
 
-// ASR (Speech-to-Text)
+//--------------------------------------------------------------
+// Configure the recognizer once before sending audio to processASR().
 bool ofxSherpaOnnx::setupASR(const std::string& encoderPath, const std::string& decoderPath, const std::string& joinerPath, const std::string& tokensPath, int sampleRate, const std::string& modelType) {
-    SherpaOnnxOnlineRecognizerConfig config{};
-    
+    // Keep path strings as members because the C configuration stores pointers
+    // returned by c_str().
+    asrEncoderPath = encoderPath;
+    asrDecoderPath = decoderPath;
+    asrJoinerPath = joinerPath;
+    asrTokensPath = tokensPath;
+    asrModelType = modelType;
+
+    ofLogNotice("ofxSherpaOnnx::setupASR") << "Initializing ASR with model type: " << asrModelType;
+
+    SherpaOnnxOnlineRecognizerConfig config;
+    // C API configuration structs must start with all fields set to zero.
+    memset(&config, 0, sizeof(config));
+
     config.feat_config.sample_rate = sampleRate;
     config.feat_config.feature_dim = 80;
 
     config.model_config.num_threads = 1;
-    config.model_config.debug = 0;
+    config.model_config.debug = 1; // Print Sherpa-ONNX diagnostics during setup.
     config.model_config.provider = "cpu";
-    config.model_config.tokens = tokensPath.c_str();
-    config.model_config.model_type = modelType.c_str();
+    config.model_config.tokens = asrTokensPath.c_str();
 
-    if (modelType == "transducer") {
-        config.model_config.transducer.encoder = encoderPath.c_str();
-        config.model_config.transducer.decoder = decoderPath.c_str();
-        config.model_config.transducer.joiner = joinerPath.c_str();
-    } else {
-        ofLogError("ofxSherpaOnnx::setupASR") << "Unsupported model type for this setup method: " << modelType;
-        return false;
+    if (asrModelType == "zipformer2") {
+        config.model_config.model_type = "zipformer2";
+    } else if (asrModelType == "transducer") {
+        config.model_config.model_type = "transducer";
     }
+
+    if (asrModelType == "transducer" || asrModelType == "zipformer2") {
+        config.model_config.transducer.encoder = asrEncoderPath.c_str();
+        config.model_config.transducer.decoder = asrDecoderPath.c_str();
+        config.model_config.transducer.joiner = asrJoinerPath.c_str();
+    }
+
+    ofLogNotice("ofxSherpaOnnx::setupASR") << "Config set.";
 
     config.decoding_method = "greedy_search";
     config.max_active_paths = 4;
@@ -55,21 +73,34 @@ bool ofxSherpaOnnx::setupASR(const std::string& encoderPath, const std::string& 
     config.rule2_min_trailing_silence = 1.2;
     config.rule3_min_utterance_length = 300;
 
-    if (!ofFile::doesFileExist(tokensPath)) {
-        ofLogError("ofxSherpaOnnx::setupASR") << "Tokens file not found: " << tokensPath;
+    // Report missing assets here instead of failing later inside the C API.
+    if (!ofFile::doesFileExist(asrTokensPath)) {
+        ofLogError("ofxSherpaOnnx::setupASR") << "Tokens file not found: " << asrTokensPath;
         return false;
     }
-    if (!ofFile::doesFileExist(encoderPath) || !ofFile::doesFileExist(decoderPath) || !ofFile::doesFileExist(joinerPath)) {
-        ofLogError("ofxSherpaOnnx::setupASR") << "One or more ASR model files not found.";
+    if (!ofFile::doesFileExist(asrEncoderPath)) {
+        ofLogError("ofxSherpaOnnx::setupASR") << "Encoder not found: " << asrEncoderPath;
+        return false;
+    }
+    if (!ofFile::doesFileExist(asrDecoderPath)) {
+        ofLogError("ofxSherpaOnnx::setupASR") << "Decoder not found: " << asrDecoderPath;
+        return false;
+    }
+    if (!ofFile::doesFileExist(asrJoinerPath)) {
+        ofLogError("ofxSherpaOnnx::setupASR") << "Joiner not found: " << asrJoinerPath;
         return false;
     }
 
+    ofLogNotice("ofxSherpaOnnx::setupASR") << "Creating recognizer with config...";
     recognizer = SherpaOnnxCreateOnlineRecognizer(&config);
     if (!recognizer) {
         ofLogError("ofxSherpaOnnx::setupASR") << "Failed to create recognizer.";
         return false;
     }
 
+    asrSampleRate = sampleRate;
+
+    ofLogNotice("ofxSherpaOnnx::setupASR") << "Creating stream...";
     stream = SherpaOnnxCreateOnlineStream(recognizer);
     if (!stream) {
         ofLogError("ofxSherpaOnnx::setupASR") << "Failed to create stream.";
@@ -80,59 +111,184 @@ bool ofxSherpaOnnx::setupASR(const std::string& encoderPath, const std::string& 
     return true;
 }
 
+//--------------------------------------------------------------
+// Feed one block of mono float audio and let endpoint detection finish phrases.
 void ofxSherpaOnnx::processASR(const std::vector<float>& audioBuffer) {
     if (!recognizer || !stream) return;
-    SherpaOnnxOnlineStreamAcceptWaveform(stream, 16000, audioBuffer.data(), audioBuffer.size());
+    if (audioBuffer.empty()) return;
+
+    SherpaOnnxOnlineStreamAcceptWaveform(stream, asrSampleRate, audioBuffer.data(), (int)audioBuffer.size());
+    // One input block can make several decoder steps ready.
     while (SherpaOnnxIsOnlineStreamReady(recognizer, stream)) {
         SherpaOnnxDecodeOnlineStream(recognizer, stream);
     }
     updateRecognitionResults();
     if (SherpaOnnxOnlineStreamIsEndpoint(recognizer, stream)) {
-        if (!currentText.empty()) {
-            finalText = currentText;
-            ofNotifyEvent(onFinalResult, finalText, this);
-            currentText = "";
-            lastResultText = "";
+        std::string finalToNotify;
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            if (!currentText.empty()) {
+                finalText = currentText;
+                finalToNotify = finalText;
+                currentText = "";
+                lastResultText = "";
+            }
+        }
+        if (!finalToNotify.empty()) {
+            // Notify outside the mutex so listeners can safely call back into this class.
+            ofNotifyEvent(onFinalResult, finalToNotify, this);
+        }
+        // Reuse the stream for the next spoken phrase.
+        SherpaOnnxOnlineStreamReset(recognizer, stream);
+    }
+}
+
+
+//--------------------------------------------------------------
+// Decode a block but leave phrase boundaries under the caller's control.
+void ofxSherpaOnnx::acceptASRWaveform(const std::vector<float>& audioBuffer) {
+    if (!recognizer || !stream) return;
+    if (audioBuffer.empty()) return;
+
+    SherpaOnnxOnlineStreamAcceptWaveform(stream, asrSampleRate, audioBuffer.data(), (int)audioBuffer.size());
+    while (SherpaOnnxIsOnlineStreamReady(recognizer, stream)) {
+        SherpaOnnxDecodeOnlineStream(recognizer, stream);
+    }
+    updateRecognitionResults();
+}
+
+//--------------------------------------------------------------
+// Convenience overload for audio received from an openFrameworks sound stream.
+void ofxSherpaOnnx::processASR(const ofSoundBuffer& soundBuffer) {
+    if (!recognizer || !stream) return;
+    if (soundBuffer.size() == 0) return;
+
+    SherpaOnnxOnlineStreamAcceptWaveform(stream, asrSampleRate, soundBuffer.getBuffer().data(), (int)soundBuffer.size());
+    while (SherpaOnnxIsOnlineStreamReady(recognizer, stream)) {
+        SherpaOnnxDecodeOnlineStream(recognizer, stream);
+    }
+    updateRecognitionResults();
+    if (SherpaOnnxOnlineStreamIsEndpoint(recognizer, stream)) {
+        std::string finalToNotify;
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            if (!currentText.empty()) {
+                finalText = currentText;
+                finalToNotify = finalText;
+                currentText = "";
+                lastResultText = "";
+            }
+        }
+        if (!finalToNotify.empty()) {
+            ofNotifyEvent(onFinalResult, finalToNotify, this);
         }
         SherpaOnnxOnlineStreamReset(recognizer, stream);
     }
 }
 
-void ofxSherpaOnnx::processASR(const ofSoundBuffer& soundBuffer) {
-    std::vector<float> audioBuffer(soundBuffer.getBuffer().begin(), soundBuffer.getBuffer().end());
-    processASR(audioBuffer);
-}
-
+//--------------------------------------------------------------
+// Copy Sherpa-ONNX text into thread-safe C++ state and emit changed partials.
 void ofxSherpaOnnx::updateRecognitionResults() {
     if (!recognizer || !stream) return;
     const SherpaOnnxOnlineRecognizerResult* result = SherpaOnnxGetOnlineStreamResult(recognizer, stream);
-    if (result && result->text && strlen(result->text) > 0) {
-        std::string newText = result->text;
-        if (newText != lastResultText) {
-            currentText = newText;
-            ofNotifyEvent(onPartialResult, currentText, this);
-            lastResultText = newText;
-        }
-    }
     if (result) {
+        if (result->text && strlen(result->text) > 0) {
+            std::string newText = result->text;
+            std::string partialToNotify;
+            {
+                std::lock_guard<std::mutex> lock(mutex);
+                if (newText != lastResultText) {
+                    currentText = newText;
+                    partialToNotify = currentText;
+                    lastResultText = newText;
+                }
+            }
+            if (!partialToNotify.empty()) {
+                ofNotifyEvent(onPartialResult, partialToNotify, this);
+            }
+        }
         SherpaOnnxDestroyOnlineRecognizerResult(result);
     }
 }
 
-std::string ofxSherpaOnnx::getCurrentText() { return currentText; }
-std::string ofxSherpaOnnx::getFinalText() { return finalText; }
 
-// TTS (Text-to-Speech)
+//--------------------------------------------------------------
+// Tell the decoder there is no more audio, then collect its final result.
+std::string ofxSherpaOnnx::finishASRAndGetText() {
+    if (!recognizer || !stream) return "";
+
+    SherpaOnnxOnlineStreamInputFinished(stream);
+    while (SherpaOnnxIsOnlineStreamReady(recognizer, stream)) {
+        SherpaOnnxDecodeOnlineStream(recognizer, stream);
+    }
+    updateRecognitionResults();
+
+    std::string textToReturn;
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        textToReturn = !currentText.empty() ? currentText : finalText;
+        finalText = textToReturn;
+        currentText.clear();
+        lastResultText.clear();
+    }
+
+    resetASRStream();
+
+    if (!textToReturn.empty()) {
+        std::string finalToNotify = textToReturn;
+        ofNotifyEvent(onFinalResult, finalToNotify, this);
+    }
+
+    return textToReturn;
+}
+
+//--------------------------------------------------------------
+// Create a clean stream so previous decoder state cannot affect a new recording.
+void ofxSherpaOnnx::resetASRStream() {
+    if (!recognizer) return;
+
+    if (stream) {
+        SherpaOnnxDestroyOnlineStream(stream);
+        stream = nullptr;
+    }
+
+    stream = SherpaOnnxCreateOnlineStream(recognizer);
+
+    std::lock_guard<std::mutex> lock(mutex);
+    currentText.clear();
+    finalText.clear();
+    lastResultText.clear();
+}
+
+std::string ofxSherpaOnnx::getCurrentText() {
+    std::lock_guard<std::mutex> lock(mutex);
+    return currentText;
+}
+std::string ofxSherpaOnnx::getFinalText() {
+    std::lock_guard<std::mutex> lock(mutex);
+    return finalText;
+}
+
+//--------------------------------------------------------------
+// Configure an offline Piper/VITS synthesizer.
 bool ofxSherpaOnnx::setupTTS(const std::string& modelPath, const std::string& lexiconPath, const std::string& tokensPath, float noiseScale, float noiseW, float lengthScale) {
+    ttsModelPath = modelPath;
+    ttsLexiconPath = lexiconPath;
+    ttsTokensPath = tokensPath;
+
+    ofLogNotice("ofxSherpaOnnx::setupTTS") << "Initializing TTS...";
+
     SherpaOnnxOfflineTtsConfig config;
     memset(&config, 0, sizeof(config));
 
-    ofFile lexiconFile(lexiconPath);
+    ofFile lexiconFile(ttsLexiconPath);
     bool hasLexicon = lexiconFile.exists() && lexiconFile.getSize() > 0;
-    std::string lexiconPathToUse = hasLexicon ? lexiconPath : "";
+    std::string lexiconPathToUse = hasLexicon ? ttsLexiconPath : "";
+
+    // Models without a lexicon use eSpeak pronunciation data when available.
     std::string dataDir;
     if (!hasLexicon) {
-        std::string modelDir = ofFilePath::getEnclosingDirectory(modelPath, false);
+        std::string modelDir = ofFilePath::getEnclosingDirectory(ttsModelPath, false);
         dataDir = modelDir + "espeak-ng-data/";
         ofDirectory espeakDir(dataDir);
         if (!espeakDir.exists()) {
@@ -140,34 +296,27 @@ bool ofxSherpaOnnx::setupTTS(const std::string& modelPath, const std::string& le
         }
     }
 
-    // Since we are using a Piper VITS model, we configure the `vits` part of the model config.
-    config.model.vits.model = modelPath.c_str();
-    config.model.vits.lexicon = lexiconPathToUse.c_str();
-    config.model.vits.tokens = tokensPath.c_str();
+    // Piper models use the VITS section of Sherpa-ONNX's TTS configuration.
+    config.model.vits.model = ttsModelPath.c_str();
+    config.model.vits.lexicon = lexiconPathToUse.empty() ? "" : lexiconPathToUse.c_str();
+    config.model.vits.tokens = ttsTokensPath.c_str();
     config.model.vits.data_dir = dataDir.empty() ? "" : dataDir.c_str();
     config.model.vits.noise_scale = noiseScale;
     config.model.vits.noise_scale_w = noiseW;
     config.model.vits.length_scale = lengthScale;
 
     config.model.num_threads = 1;
-    config.model.debug = 1;
+    config.model.debug = 0;
     config.model.provider = "cpu";
-		
+
     config.max_num_sentences = 1;
 
-
-    if (!ofFile::doesFileExist(modelPath) || !ofFile::doesFileExist(tokensPath)) {
-        ofLogError("ofxSherpaOnnx::setupTTS") << "One or more required TTS model files not found. Check paths.";
+    if (!ofFile::doesFileExist(ttsModelPath) || !ofFile::doesFileExist(ttsTokensPath)) {
+        ofLogError("ofxSherpaOnnx::setupTTS") << "One or more required TTS model files not found.";
         return false;
     }
-    if (!hasLexicon) {
-        if (dataDir.empty()) {
-            ofLogWarning("ofxSherpaOnnx::setupTTS") << "Lexicon missing or empty and espeak-ng-data not found. TTS init may fail.";
-        } else {
-            ofLogNotice("ofxSherpaOnnx::setupTTS") << "Lexicon missing or empty; using espeak-ng-data from: " << dataDir;
-        }
-    }
 
+    ofLogNotice("ofxSherpaOnnx::setupTTS") << "Creating TTS synthesizer...";
     ttsSynthesizer = SherpaOnnxCreateOfflineTts(&config);
     if (!ttsSynthesizer) {
         ofLogError("ofxSherpaOnnx::setupTTS") << "Failed to create TTS synthesizer.";
@@ -178,6 +327,8 @@ bool ofxSherpaOnnx::setupTTS(const std::string& modelPath, const std::string& le
     return true;
 }
 
+//--------------------------------------------------------------
+// Synthesize the complete sentence and copy C API memory into a C++ vector.
 bool ofxSherpaOnnx::generateTTS(const std::string& text, std::vector<float>& audioSamples, int& sampleRate) {
     if (!ttsSynthesizer) {
         ofLogError("ofxSherpaOnnx::generateTTS") << "TTS not initialized. Call setupTTS() first.";
@@ -185,7 +336,7 @@ bool ofxSherpaOnnx::generateTTS(const std::string& text, std::vector<float>& aud
     }
 
     float speed = 1.0f;
-    int sid = 0; // Speaker ID
+    int sid = 0; // Single-speaker models use speaker zero.
 
     const SherpaOnnxGeneratedAudio* audio = SherpaOnnxOfflineTtsGenerate(ttsSynthesizer, text.c_str(), sid, speed);
 
@@ -194,12 +345,13 @@ bool ofxSherpaOnnx::generateTTS(const std::string& text, std::vector<float>& aud
         if(audio) SherpaOnnxDestroyOfflineTtsGeneratedAudio(audio);
         return false;
     }
-    
+
     audioSamples.assign(audio->samples, audio->samples + audio->n);
     sampleRate = audio->sample_rate;
 
+    // The vector now owns a copy, so the C API buffer can be released.
     SherpaOnnxDestroyOfflineTtsGeneratedAudio(audio);
-    
+
     ofLogNotice("ofxSherpaOnnx::generateTTS") << "Generated " << audioSamples.size() << " samples at " << sampleRate << " Hz.";
     return true;
 }

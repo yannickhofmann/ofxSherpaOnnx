@@ -1,7 +1,7 @@
 /*
  * ofxSherpaOnnx
  *
- * Copyright (c) 2025 Yannick Hofmann
+ * Copyright (c) 2026 Yannick Hofmann
  * <contact@yannickhofmann.de>
  *
  * BSD Simplified License. 
@@ -13,7 +13,7 @@
 
 #include "ofMain.h"
 #include "ofxSherpaOnnx.h"
-#include "ofxGui.h" // For a simple GUI to input text
+#include "ofxGui.h" // Provides the text field and generate button.
 
 class ofApp : public ofBaseApp {
 
@@ -35,15 +35,26 @@ public:
     void dragEvent(ofDragInfo dragInfo) override;
     void gotMessage(ofMessage msg) override;
 
+    // GUI callback and small drawing helpers used by the example.
     void onGenerateSpeechButtonPressed();
+    void drawText(ofTrueTypeFont & font, const std::string & text, float x, float y, const ofColor & color);
+    void drawWrappedText(ofTrueTypeFont & font, const std::string & text, float x, float y, float maxWidth, float lineHeight, const ofColor & color);
 
     ofxSherpaOnnx sherpaOnnx;
-    ofSoundPlayer soundPlayer; // To play the generated speech
+    ofSoundPlayer soundPlayer; // Plays the temporary WAV created from TTS samples.
 
+    // Controls shown in the standard openFrameworks GUI panel.
     ofxPanel gui;
     ofxTextField textInput;
     ofxButton generateSpeechButton;
     
+    // Tracks playback state so repeated clicks cannot overlap generated speech.
     std::string currentTextToSynthesize;
     bool isSpeaking;
+
+    // Custom fonts are optional; draw() falls back to bitmap text if they fail.
+    ofTrueTypeFont titleFont;
+    ofTrueTypeFont bodyFont;
+    ofTrueTypeFont previewFont;
+    bool fontsReady = false;
 };

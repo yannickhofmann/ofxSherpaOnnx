@@ -1,7 +1,7 @@
 /*
  * ofxSherpaOnnx
  *
- * Copyright (c) 2025 Yannick Hofmann
+ * Copyright (c) 2026 Yannick Hofmann
  * <contact@yannickhofmann.de>
  *
  * BSD Simplified License. 
@@ -34,17 +34,31 @@ public:
     void dragEvent(ofDragInfo dragInfo) override;
     void gotMessage(ofMessage msg) override;
 
+		// openFrameworks calls this on the audio thread for each microphone buffer.
 		void audioIn(ofSoundBuffer & input) override;
 
-		// Event handlers for ofxSherpaOnnx
+		// Receive changing and completed transcripts from ofxSherpaOnnx.
 		void onPartialResultReceived(std::string& result);
 		void onFinalResultReceived(std::string& result);
 
+		void drawText(ofTrueTypeFont & font, const std::string & text, float x, float y, const ofColor & color);
+		void drawWrappedText(ofTrueTypeFont & font, const std::string & text, float x, float y, float maxWidth, float lineHeight, const ofColor & color);
+
+		// Recognition and microphone objects.
 		ofxSherpaOnnx sherpaOnnx;
 		ofSoundStream soundStream;
 		ofSoundBuffer resampledBuffer;
 
+		// The recognizer expects 16 kHz audio, while the device may use another rate.
 		unsigned int modelSampleRate;
+		// Result callbacks run on the audio thread, so draw() reads these under a lock.
 		std::string currentRecognition;
 		std::string finalRecognition;
+		std::mutex resultMutex;
+
+		// Optional fonts for the interface; bitmap text is used as a fallback.
+		ofTrueTypeFont titleFont;
+		ofTrueTypeFont bodyFont;
+		ofTrueTypeFont transcriptFont;
+		bool fontsReady = false;
 };

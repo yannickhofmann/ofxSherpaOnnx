@@ -2,4 +2,4 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-python3 "$SCRIPT_DIR/install_all.py" "--only" "tts-models" "--tts-language" "en" "$@"
+python3 "$SCRIPT_DIR/install_all.py" "--only" "asr-models" "--asr-language" "de" "$@"
