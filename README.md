@@ -93,6 +93,12 @@ The language is selected when the application starts and determines which instal
 
 Generate or update the example projects using the openFrameworks Project Generator. Open the generated Visual Studio solution (`.sln`), then build and run the desired example from Visual Studio.
 
+## Known Caveats
+
+**Windows:**
+
+Some prebuilt sherpa-onnx libraries may have been compiled with MSVC **v145**. If you experience linker or ABI compatibility issues, build in **Release x64** and set the **Platform Toolset** to **v145**.
+
 ## License
 
 Copyright (c) 2026 Yannick Hofmann.
