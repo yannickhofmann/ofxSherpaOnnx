@@ -82,20 +82,20 @@ osx:
 	ADDON_LDFLAGS += -framework Accelerate
 
 vs:
-	ADDON_LIBS += C:/Users/yhofmann/Downloads/of_v0.12.1_vs_64_release/addons/ofxSherpaOnnx/libs/sherpa-onnx/lib/Windows_x86_64/sherpa-onnx-c-api.lib
-	ADDON_LIBS += C:/Users/yhofmann/Downloads/of_v0.12.1_vs_64_release/addons/ofxSherpaOnnx/libs/sherpa-onnx/lib/Windows_x86_64/sherpa-onnx-cxx-api.lib
-	ADDON_LIBS += C:/Users/yhofmann/Downloads/of_v0.12.1_vs_64_release/addons/ofxSherpaOnnx/libs/sherpa-onnx/lib/Windows_x86_64/sherpa-onnx-core.lib
-	ADDON_LIBS += C:/Users/yhofmann/Downloads/of_v0.12.1_vs_64_release/addons/ofxSherpaOnnx/libs/sherpa-onnx/lib/Windows_x86_64/kaldi-decoder-core.lib
-	ADDON_LIBS += C:/Users/yhofmann/Downloads/of_v0.12.1_vs_64_release/addons/ofxSherpaOnnx/libs/sherpa-onnx/lib/Windows_x86_64/sherpa-onnx-kaldifst-core.lib
-	ADDON_LIBS += C:/Users/yhofmann/Downloads/of_v0.12.1_vs_64_release/addons/ofxSherpaOnnx/libs/sherpa-onnx/lib/Windows_x86_64/kaldi-native-fbank-core.lib
-	ADDON_LIBS += C:/Users/yhofmann/Downloads/of_v0.12.1_vs_64_release/addons/ofxSherpaOnnx/libs/sherpa-onnx/lib/Windows_x86_64/sherpa-onnx-fst.lib
-	ADDON_LIBS += C:/Users/yhofmann/Downloads/of_v0.12.1_vs_64_release/addons/ofxSherpaOnnx/libs/sherpa-onnx/lib/Windows_x86_64/sherpa-onnx-fstfar.lib
-	ADDON_LIBS += C:/Users/yhofmann/Downloads/of_v0.12.1_vs_64_release/addons/ofxSherpaOnnx/libs/sherpa-onnx/lib/Windows_x86_64/ssentencepiece_core.lib
-	ADDON_LIBS += C:/Users/yhofmann/Downloads/of_v0.12.1_vs_64_release/addons/ofxSherpaOnnx/libs/sherpa-onnx/lib/Windows_x86_64/piper_phonemize.lib
-	ADDON_LIBS += C:/Users/yhofmann/Downloads/of_v0.12.1_vs_64_release/addons/ofxSherpaOnnx/libs/sherpa-onnx/lib/Windows_x86_64/espeak-ng.lib
-	ADDON_LIBS += C:/Users/yhofmann/Downloads/of_v0.12.1_vs_64_release/addons/ofxSherpaOnnx/libs/sherpa-onnx/lib/Windows_x86_64/ucd.lib
-	ADDON_LIBS += C:/Users/yhofmann/Downloads/of_v0.12.1_vs_64_release/addons/ofxSherpaOnnx/libs/sherpa-onnx/lib/Windows_x86_64/kissfft-float.lib
-	ADDON_LIBS += C:/Users/yhofmann/Downloads/of_v0.12.1_vs_64_release/addons/ofxSherpaOnnx/libs/sherpa-onnx/lib/Windows_x86_64/onnxruntime.lib
+	ADDON_LIBS += libs/sherpa-onnx/lib/Windows_x86_64/sherpa-onnx-c-api.lib
+	ADDON_LIBS += libs/sherpa-onnx/lib/Windows_x86_64/sherpa-onnx-cxx-api.lib
+	ADDON_LIBS += libs/sherpa-onnx/lib/Windows_x86_64/sherpa-onnx-core.lib
+	ADDON_LIBS += libs/sherpa-onnx/lib/Windows_x86_64/kaldi-decoder-core.lib
+	ADDON_LIBS += libs/sherpa-onnx/lib/Windows_x86_64/sherpa-onnx-kaldifst-core.lib
+	ADDON_LIBS += libs/sherpa-onnx/lib/Windows_x86_64/kaldi-native-fbank-core.lib
+	ADDON_LIBS += libs/sherpa-onnx/lib/Windows_x86_64/sherpa-onnx-fst.lib
+	ADDON_LIBS += libs/sherpa-onnx/lib/Windows_x86_64/sherpa-onnx-fstfar.lib
+	ADDON_LIBS += libs/sherpa-onnx/lib/Windows_x86_64/ssentencepiece_core.lib
+	ADDON_LIBS += libs/sherpa-onnx/lib/Windows_x86_64/piper_phonemize.lib
+	ADDON_LIBS += libs/sherpa-onnx/lib/Windows_x86_64/espeak-ng.lib
+	ADDON_LIBS += libs/sherpa-onnx/lib/Windows_x86_64/ucd.lib
+	ADDON_LIBS += libs/sherpa-onnx/lib/Windows_x86_64/kissfft-float.lib
+	ADDON_LIBS += libs/sherpa-onnx/lib/Windows_x86_64/onnxruntime.lib
 
 	ADDON_LIBS += ws2_32.lib
 	ADDON_LIBS += bcrypt.lib
