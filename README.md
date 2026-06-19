@@ -73,6 +73,21 @@ Run the release executable:
 ```bash
 make RunRelease
 ```
+### Select the Example Language
+
+All examples use German by default. On Linux and macOS, start an example explicitly in German with:
+
+```bash
+OFX_SHERPAONNX_LANG=de make RunRelease
+```
+
+To start an example in English, use:
+
+```bash
+OFX_SHERPAONNX_LANG=en make RunRelease
+```
+
+The language is selected when the application starts and determines which installed ASR or TTS model is loaded. If the requested model is unavailable, the examples automatically fall back to the other installed language model.
 
 **Windows:**
 
